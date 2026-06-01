@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Panel Administrador</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    body { background:#0a0a0a; font-family:'Georgia',serif; color:#d4af37; min-height:100vh; min-height:100dvh; }
+
+    /* ── LOGIN ── */
+    #screen-login {
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; min-height:100dvh; padding:20px;
+    }
+    .login-box {
+      width:100%; max-width:380px;
+      border:1px solid #d4af37; background:#0f0f0f;
+      padding:clamp(28px,5vmin,48px) clamp(20px,4vw,36px); text-align:center;
+      box-shadow:0 0 50px rgba(212,175,55,.15);
+    }
+    .login-box svg { margin-bottom:20px; }
+    .login-box h2 {
+      font-size:1.2rem; letter-spacing:5px;
+      text-transform:uppercase; margin-bottom:6px;
+    }
+    .login-box p { font-size:.75rem; color:#8b6914; letter-spacing:3px; margin-bottom:30px; }
+    .login-box input {
+      width:100%; padding:13px 16px; margin-bottom:10px;
+      background:#1a1a1a; border:1px solid #2a2a2a;
+      color:#d4af37; font-size:1rem; font-family:'Georgia',serif;
+      letter-spacing:4px; text-align:center; outline:none; transition:border .3s;
+    }
+    .login-box input:focus { border-color:#d4af37; }
+    .login-error { color:#c0392b; font-size:.75rem; letter-spacing:2px; min-height:18px; margin-bottom:14px; }
+    .btn-login {
+      width:100%; padding:14px;
+      background:linear-gradient(135deg,#8b6914,#d4af37);
+      border:none; color:#0a0a0a; font-family:'Georgia',serif;
+      font-size:.9rem; letter-spacing:4px; text-transform:uppercase;
+      cursor:pointer; font-weight:bold; transition:all .3s;
+    }
+    .btn-login:hover { box-shadow:0 0 25px rgba(212,175,55,.4); }
+
+    /* ── DASHBOARD ── */
+    #screen-dash { display:none; padding:clamp(16px,3vw,30px) clamp(12px,3vw,24px); max-width:1100px; margin:0 auto; }
+    #screen-dash.active { display:block; }
+
+    .dash-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:clamp(20px,3vmin,36px); flex-wrap:wrap; gap:12px;
+    }
+    .dash-header h1 {
+      font-size:clamp(1.1rem,2.5vw,1.6rem); letter-spacing:clamp(2px,1vw,5px);
+      text-transform:uppercase; text-shadow:0 0 20px rgba(212,175,55,.4);
+    }
+    .dash-header p { font-size:clamp(.6rem,.75vw,.75rem); color:#8b6914; letter-spacing:3px; }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .live-badge {
+      display:flex; align-items:center; gap:8px;
+      font-size:.7rem; letter-spacing:3px; color:#8b6914;
+    }
+    .live-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:#d4af37; animation:pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; box-shadow:0 0 0 0 rgba(212,175,55,.4); }
+      50%      { opacity:.6; box-shadow:0 0 0 6px rgba(212,175,55,0); }
+    }
+    .btn-logout-admin {
+      padding:8px 20px; border:1px solid #2a2a2a;
+      background:transparent; color:#555; font-family:'Georgia',serif;
+      font-size:.75rem; letter-spacing:2px; text-transform:uppercase;
+      cursor:pointer; transition:all .3s;
+    }
+    .btn-logout-admin:hover { border-color:#555; color:#888; }
+
+    /* Tarjetas resumen */
+    .summary-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(clamp(140px,20vw,200px),1fr));
+      gap:clamp(12px,2vw,20px); margin-bottom:clamp(20px,3vmin,36px);
+    }
+    .summary-card {
+      border:1px solid #2a2a2a; background:#0f0f0f;
+      padding:clamp(16px,2.5vmin,24px) clamp(12px,2vw,20px); text-align:center; transition:border .3s;
+    }
+    .summary-card:hover { border-color:#d4af37; }
+    .summary-card .label { font-size:clamp(.6rem,.7vw,.7rem); letter-spacing:3px; color:#8b6914; text-transform:uppercase; margin-bottom:10px; }
+    .summary-card .value { font-size:clamp(1.4rem,3vw,2.2rem); color:#d4af37; text-shadow:0 0 15px rgba(212,175,55,.3); }
+    .summary-card .sub { font-size:clamp(.55rem,.65vw,.65rem); color:#555; letter-spacing:2px; margin-top:4px; }
+
+    /* Tabla de calificaciones */
+    .section-title {
+      font-size:.8rem; letter-spacing:4px; text-transform:uppercase;
+      color:#8b6914; margin-bottom:16px; padding-bottom:8px;
+      border-bottom:1px solid #1a1a1a;
+    }
+    .table-wrap { overflow-x:auto; margin-bottom:clamp(20px,3vmin,36px); -webkit-overflow-scrolling:touch; }
+    table { width:100%; border-collapse:collapse; font-size:clamp(.7rem,.85vw,.85rem); min-width:600px; }
+    thead tr { border-bottom:1px solid #d4af37; }
+    thead th {
+      padding:12px 14px; text-align:left;
+      font-size:.7rem; letter-spacing:3px;
+      text-transform:uppercase; color:#8b6914;
+      font-weight:normal;
+    }
+    tbody tr {
+      border-bottom:1px solid #1a1a1a;
+      transition:background .2s;
+    }
+    tbody tr:hover { background:#111; }
+    tbody td { padding:12px 14px; color:#ccc; }
+    tbody td.gold { color:#d4af37; font-weight:bold; }
+    tbody td.eval-tag {
+      font-size:.7rem; letter-spacing:2px;
+      color:#8b6914; text-transform:uppercase;
+    }
+    .empty-state {
+      text-align:center; padding:60px 20px;
+      color:#2a2a2a; font-size:.85rem; letter-spacing:3px;
+    }
+
+    /* Barras por evaluador */
+    .bars-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(clamp(220px,30vw,280px),1fr));
+      gap:clamp(12px,2vw,20px); margin-bottom:clamp(20px,3vmin,36px);
+    }
+    .bar-card {
+      border:1px solid #1a1a1a; background:#0f0f0f; padding:24px;
+    }
+    .bar-card h4 {
+      font-size:.75rem; letter-spacing:3px; text-transform:uppercase;
+      color:#8b6914; margin-bottom:16px;
+    }
+    .bar-row { margin-bottom:12px; }
+    .bar-row .bar-label {
+      display:flex; justify-content:space-between;
+      font-size:.7rem; letter-spacing:2px; color:#888;
+      margin-bottom:5px;
+    }
+    .bar-track {
+      height:6px; background:#1a1a1a; border-radius:3px; overflow:hidden;
+    }
+    .bar-fill {
+      height:100%; background:linear-gradient(90deg,#8b6914,#d4af37);
+      border-radius:3px; transition:width .8s ease;
+    }
+
+    .divider-gold {
+      width:100%; height:1px;
+      background:linear-gradient(90deg,transparent,#d4af37,transparent);
+      margin:30px 0;
+    }
+    .back-link {
+      color:#8b6914; text-decoration:none; font-size:.8rem;
+      letter-spacing:2px; text-transform:uppercase; transition:color .3s;
+    }
+    .back-link:hover { color:#d4af37; }
+    .last-update {
+      font-size:.65rem; color:#333; letter-spacing:2px; text-align:right;
+      margin-top:-20px; margin-bottom:20px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN ADMIN -->
+<div id="screen-login">
+  <div class="login-box">
+    <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="35" cy="35" r="33" fill="none" stroke="#d4af37" stroke-width="1.5" opacity=".4"/>
+      <!-- Candado -->
+      <rect x="22" y="34" width="26" height="20" rx="2"
+            fill="none" stroke="#d4af37" stroke-width="1.8"/>
+      <path d="M26 34 V26 Q26 18 35 18 Q44 18 44 26 V34"
+            fill="none" stroke="#d4af37" stroke-width="1.8"/>
+      <circle cx="35" cy="44" r="3" fill="#d4af37"/>
+      <line x1="35" y1="47" x2="35" y2="51" stroke="#d4af37" stroke-width="1.8"/>
+    </svg>
+    <h2>Administrador</h2>
+    <p>Acceso exclusivo del profesor</p>
+    <input type="password" id="admin-pass" placeholder="Contraseña"
+           onkeydown="if(event.key==='Enter')adminLogin()"/>
+    <div class="login-error" id="admin-error"></div>
+    <button class="btn-login" onclick="adminLogin()">Ingresar al Panel</button>
+    <br/><br/>
+    <a href="index.html" class="back-link">← Volver al inicio</a>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dash">
+  <div class="dash-header">
+    <div>
+      <h1>Panel de Control</h1>
+      <p>Calificaciones en tiempo real</p>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        EN VIVO
+      </div>
+      <button class="btn-logout-admin" onclick="adminLogout()">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <!-- Resumen general -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Registros</div>
+      <div class="value" id="stat-total">0</div>
+      <div class="sub">calificaciones</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Promedio General</div>
+      <div class="value" id="stat-prom">0.00</div>
+      <div class="sub">sobre 40 puntos</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Calificación Más Alta</div>
+      <div class="value" id="stat-max">0.00</div>
+      <div class="sub">puntos</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Última Actualización</div>
+      <div class="value" style="font-size:1rem;padding-top:8px;" id="stat-time">—</div>
+      <div class="sub">hora local</div>
+    </div>
+  </div>
+
+  <!-- Barras por evaluador -->
+  <p class="section-title">Resumen por Evaluador</p>
+  <div class="bars-grid" id="bars-container">
+    <!-- generado por JS -->
+  </div>
+
+  <div class="divider-gold"></div>
+
+  <!-- Tabla completa -->
+  <p class="section-title">Registro Completo de Calificaciones</p>
+  <p class="last-update" id="last-update-text"></p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Evaluador</th>
+          <th>Participante</th>
+          <th>Equipo</th>
+          <th>Presentación</th>
+          <th>Contenido</th>
+          <th>Innovación</th>
+          <th>Impacto</th>
+          <th>Total</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-body">
+        <tr><td colspan="10" class="empty-state">Cargando datos...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  // ── CONFIGURACIÓN ──────────────────────────────────────────────
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxlKrArwE9Viwuot-HNOz5j6VGE8Gjuql7WVfFardIB8Cr75a8vCQrUzDYmUlWJS07uTw/exec';
+  const ADMIN_PASSWORD  = 'Litpaadmin2026'; // Cambia esta contraseña
+  const REFRESH_MS      = 8000; // Actualizar cada 8 segundos
+  // ───────────────────────────────────────────────────────────────
+
+  let refreshInterval = null;
+
+  function adminLogin() {
+    const val = document.getElementById('admin-pass').value;
+    if (val === ADMIN_PASSWORD) {
+      document.getElementById('screen-login').style.display = 'none';
+      document.getElementById('screen-dash').classList.add('active');
+      loadData();
+      refreshInterval = setInterval(loadData, REFRESH_MS);
+    } else {
+      document.getElementById('admin-error').textContent = 'Contraseña incorrecta.';
+      document.getElementById('admin-pass').value = '';
+    }
+  }
+
+  function adminLogout() {
+    clearInterval(refreshInterval);
+    document.getElementById('screen-dash').classList.remove('active');
+    document.getElementById('screen-login').style.display = 'flex';
+    document.getElementById('admin-pass').value = '';
+    document.getElementById('admin-error').textContent = '';
+  }
+
+  document.getElementById('admin-pass').addEventListener('keydown', e => {
+    if (e.key === 'Enter') adminLogin();
+  });
+
+  async function loadData() {
+    try {
+      const res  = await fetch(APPS_SCRIPT_URL + '?action=get');
+      const data = await res.json();
+      renderDashboard(data);
+    } catch(e) {
+      // Si el script no está configurado, mostrar datos de ejemplo
+      renderDashboard(getDemoData());
+    }
+  }
+
+  function getDemoData() {
+    return [
+      { evaluador:'Evaluador 1', nombre:'Ana García', equipo:'Equipo Alpha',
+        presentacion:9, contenido:8.5, innovacion:9, impacto:8, total:34.5,
+        timestamp: new Date().toISOString() },
+      { evaluador:'Evaluador 2', nombre:'Ana García', equipo:'Equipo Alpha',
+        presentacion:8, contenido:9, innovacion:8.5, impacto:9, total:34.5,
+        timestamp: new Date().toISOString() },
+      { evaluador:'Evaluador 3', nombre:'Ana García', equipo:'Equipo Alpha',
+        presentacion:9.5, contenido:9, innovacion:8, impacto:9.5, total:36,
+        timestamp: new Date().toISOString() },
+    ];
+  }
+
+  function renderDashboard(rows) {
+    if (!Array.isArray(rows)) rows = [];
+
+    // Stats generales
+    document.getElementById('stat-total').textContent = rows.length;
+    const totals = rows.map(r => parseFloat(r.total) || 0);
+    const prom   = totals.length ? (totals.reduce((a,b)=>a+b,0)/totals.length).toFixed(2) : '0.00';
+    const max    = totals.length ? Math.max(...totals).toFixed(2) : '0.00';
+    document.getElementById('stat-prom').textContent = prom;
+    document.getElementById('stat-max').textContent  = max;
+    const now = new Date();
+    document.getElementById('stat-time').textContent =
+      now.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('last-update-text').textContent =
+      'Última actualización: ' + now.toLocaleString('es-MX');
+
+    // Barras por evaluador
+    const evalNames = ['Evaluador 1','Evaluador 2','Evaluador 3'];
+    const barsHtml = evalNames.map(name => {
+      const evalRows = rows.filter(r => r.evaluador === name);
+      const evalTot  = evalRows.reduce((a,r) => a + (parseFloat(r.total)||0), 0);
+      const evalProm = evalRows.length ? (evalTot/evalRows.length).toFixed(2) : '0.00';
+      const pct      = Math.min(100, (parseFloat(evalProm)/40)*100).toFixed(1);
+      const criteria = ['presentacion','contenido','innovacion','impacto'];
+      const labels   = ['Presentación','Contenido','Innovación','Impacto'];
+      const critBars = criteria.map((c,i) => {
+        const avg = evalRows.length
+          ? (evalRows.reduce((a,r)=>a+(parseFloat(r[c])||0),0)/evalRows.length).toFixed(1)
+          : '0.0';
+        const p = Math.min(100,(parseFloat(avg)/10)*100).toFixed(0);
+        return `<div class="bar-row">
+          <div class="bar-label"><span>${labels[i]}</span><span>${avg}/10</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${p}%"></div></div>
+        </div>`;
+      }).join('');
+      return `<div class="bar-card">
+        <h4>${name} · ${evalRows.length} registro(s) · Prom: ${evalProm}/40</h4>
+        ${critBars}
+      </div>`;
+    }).join('');
+    document.getElementById('bars-container').innerHTML = barsHtml;
+
+    // Tabla
+    if (!rows.length) {
+      document.getElementById('tabla-body').innerHTML =
+        '<tr><td colspan="10" class="empty-state">Sin calificaciones registradas aún.</td></tr>';
+      return;
+    }
+    const tbody = rows.map((r,i) => {
+      const ts = r.timestamp ? new Date(r.timestamp).toLocaleTimeString('es-MX',
+        {hour:'2-digit',minute:'2-digit'}) : '—';
+      return `<tr>
+        <td style="color:#555">${i+1}</td>
+        <td class="eval-tag">${r.evaluador||'—'}</td>
+        <td>${r.nombre||'—'}</td>
+        <td>${r.equipo||'—'}</td>
+        <td>${parseFloat(r.presentacion||0).toFixed(1)}</td>
+        <td>${parseFloat(r.contenido||0).toFixed(1)}</td>
+        <td>${parseFloat(r.innovacion||0).toFixed(1)}</td>
+        <td>${parseFloat(r.impacto||0).toFixed(1)}</td>
+        <td class="gold">${parseFloat(r.total||0).toFixed(2)}</td>
+        <td style="color:#555;font-size:.75rem">${ts}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('tabla-body').innerHTML = tbody;
+  }
+</script>
+</body>
+</html>

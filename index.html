@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Panel de Evaluación - LITPA</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body {
+      background:#0a0a0a;
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; min-height:100dvh;
+      font-family:'Georgia',serif; overflow:hidden;
+      width:100%;
+    }
+    /* Siempre centrado, logo arriba */
+    .splash {
+      text-align:center; position:relative; z-index:10;
+      padding:20px; width:100%; max-width:500px;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    .logo-wrap {
+      width:clamp(160px, 40vmin, 280px);
+      height:clamp(182px, 45vmin, 318px);
+      margin:0 auto clamp(16px,3vmin,28px);
+      position:relative;
+      animation: floatGlow 4s ease-in-out 5s infinite;
+    }
+    @keyframes floatGlow {
+      0%,100% { transform:translateY(0);     filter:drop-shadow(0 0 20px rgba(212,175,55,.55)); }
+      50%      { transform:translateY(-8px);  filter:drop-shadow(0 0 40px rgba(212,175,55,.9)); }
+    }
+    .logo-img {
+      width:100%; height:100%; object-fit:contain;
+      position:absolute; top:0; left:0;
+      filter:grayscale(1) contrast(3) invert(1) sepia(1) saturate(6) hue-rotate(2deg) brightness(0.9);
+      mix-blend-mode:screen;
+      opacity:0; animation:revealLogo 1.2s ease forwards 3.5s;
+    }
+    @keyframes revealLogo { to { opacity:1; } }
+    .logo-draw { width:100%; height:100%; position:absolute; top:0; left:0; pointer-events:none; }
+    .trace-path {
+      fill:none; stroke:#d4af37; stroke-width:6;
+      stroke-linecap:round; stroke-linejoin:round;
+      filter:drop-shadow(0 0 6px rgba(212,175,55,.9));
+      stroke-dasharray:30000; stroke-dashoffset:30000;
+      animation:traceDraw 3.5s ease-in-out forwards 0.3s;
+    }
+    @keyframes traceDraw { to { stroke-dashoffset:0; } }
+
+    h1 {
+      font-size:clamp(1.2rem, 4vw, 2.2rem);
+      color:#d4af37; letter-spacing:clamp(3px,1vw,7px);
+      text-transform:uppercase; margin-bottom:6px;
+      text-shadow:0 0 22px rgba(212,175,55,.6); font-weight:bold;
+      opacity:0; animation:fadeUp 1s ease 4.5s forwards;
+    }
+    .subtitle {
+      font-size:clamp(.6rem,.9vw,.75rem); color:#8b6914;
+      letter-spacing:clamp(2px,.8vw,5px);
+      text-transform:uppercase; margin-bottom:clamp(20px,4vmin,36px);
+      opacity:0; animation:fadeUp 1s ease 5s forwards;
+    }
+    .divider {
+      width:clamp(120px,40vw,200px); height:1px;
+      background:linear-gradient(90deg,transparent,#d4af37,transparent);
+      margin:0 auto clamp(14px,2.5vmin,22px);
+      opacity:0; animation:fadeUp 1s ease 5.2s forwards;
+    }
+    .btn-group {
+      display:flex; gap:clamp(10px,2vw,20px);
+      justify-content:center; flex-wrap:wrap;
+      opacity:0; animation:fadeUp 1s ease 5.4s forwards;
+    }
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .btn {
+      display:inline-block;
+      padding:clamp(10px,1.5vmin,14px) clamp(20px,4vw,44px);
+      border:2px solid #d4af37; background:transparent;
+      color:#d4af37; font-family:'Georgia',serif;
+      font-size:clamp(.7rem,.9vw,.85rem);
+      letter-spacing:clamp(2px,.6vw,4px); text-transform:uppercase;
+      cursor:pointer; text-decoration:none; transition:all .3s;
+      position:relative; overflow:hidden; white-space:nowrap;
+    }
+    .btn::before {
+      content:''; position:absolute; top:0; left:-100%;
+      width:100%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(212,175,55,.15),transparent);
+      transition:left .45s;
+    }
+    .btn:hover::before { left:100%; }
+    .btn:hover {
+      background:rgba(212,175,55,.1);
+      box-shadow:0 0 28px rgba(212,175,55,.4);
+      transform:translateY(-2px);
+    }
+    .btn-admin { border-color:#8b6914; color:#8b6914; }
+    .btn-admin:hover { background:rgba(139,105,20,.1); box-shadow:0 0 28px rgba(139,105,20,.4); }
+
+    .particles { position:fixed; inset:0; pointer-events:none; z-index:1; }
+    .particle {
+      position:absolute; border-radius:50%; opacity:0;
+      background:#d4af37; animation:pf linear infinite;
+    }
+    @keyframes pf {
+      0%   { opacity:0; transform:translateY(100vh) scale(0); }
+      10%  { opacity:.5; } 90% { opacity:.2; }
+      100% { opacity:0; transform:translateY(-10vh) scale(1.5); }
+    }
+
+    /* Tablet landscape: siempre centrado, nunca horizontal */
+    @media (min-width:768px) and (orientation:landscape) {
+      .splash { flex-direction:column; text-align:center; max-width:500px; }
+      .btn-group { justify-content:center; }
+      .divider { margin-left:auto; margin-right:auto; }
+    }
+  </style>
+</head>
+<body>
+<div class="particles" id="pts"></div>
+<div class="splash">
+  <div class="logo-wrap">
+    <img class="logo-img" src="Logo.jpeg" alt="Escudo LITPA"/>
+    <svg class="logo-draw" viewBox="0 0 1178 1335" xmlns="http://www.w3.org/2000/svg">
+      <path class="trace-path" id="tp1"
+        d="m 592.29924,1258.75 c -2.07369,-1.7875 -4.71894,-4.15 -5.87834,-5.25 -1.1594,-1.1 -6.75425,-6.275 -12.43299,-11.5 -5.67875,-5.225 -10.81165,-9.9682 -11.40645,-10.5404 -7.59158,-7.3037 -27.28788,-21.5439 -37.58146,-27.171 -27.96637,-15.2881 -52.15572,-20.5662 -120.5,-26.293 -43.39966,-3.6366 -62.63379,-7.0176 -88.25388,-15.5137 -19.96897,-6.6221 -33.34716,-12.3864 -48.75001,-21.0052 -35.06437,-19.6204 -66.58951,-49.2473 -87.64956,-82.3718 -2.30961,-3.6327 -5.47819,-8.607 -7.04128,-11.0541 -8.62073,-13.4958 -24.28719,-49.18581 -30.74946,-70.0508 -1.78862,-5.775 -3.85327,-12.34098 -4.5881,-14.59106 -3.75618,-11.50157 -10.98165,-50.10542 -13.64635,-72.90894 -1.68013,-14.37795 -1.68583,-62.54881 -0.009,-77 6.03358,-52.00185 14.34438,-86.00905 31.89206,-130.5 27.09609,-68.70031 40.15856,-112.91922 45.85908,-155.24161 7.89794,-58.63675 -4.86883,-138.67223 -33.53914,-210.25839 -10.76507,-26.87902 -28.1472,-57.5499 -47.84742,-84.42711 -7.77477,-10.6072 -8.0154,-13.06437 -1.94339,-19.84523 15.78455,-17.62727 43.86823,-46.92844 89.81845,-93.71224 70.3435,-71.6196 68.13873,-69.460555 71.59346,-70.108666 4.06186,-0.762009 4.76008,-0.339655 23.81223,14.403906 C 350.57533,100.27288 386.4841,114 434.74788,114 c 50.01671,0 87.79122,-13.87913 143.64026,-52.776366 8.31152,-5.788733 16.27,-10.975871 17.6855,-11.526973 3.88215,-1.511444 6.54579,-0.399999 16.92636,7.062777 54.15484,38.932878 80.67029,51.284942 120,55.901312 15.87577,1.86343 43.16151,1.34272 57.5,-1.09731 36.38378,-6.19155 68.46076,-21.477437 117.23974,-55.869149 C 911.56415,52.997887 914.00903,52 916.79098,52 c 3.55747,0 4.60799,0.816407 15.76295,12.25 6.5733,6.7375 19.56803,20.35 28.87717,30.25 9.30915,9.9 32.32412,33.3 51.1444,52 18.8203,18.7 37.7284,38.275 42.0181,43.5 4.2897,5.225 12.0976,13.91193 17.3509,19.30428 5.2533,5.39236 9.9205,10.79236 10.3715,12 1.3499,3.61484 0.05,7.11491 -5.302,14.27435 -7.8401,10.48821 -21.61,32.47136 -29.6968,47.40978 -32.9059,60.78559 -53.44729,138.49033 -55.02899,208.16556 -1.19388,52.59149 4.87244,82.62457 27.74229,137.34603 19.4177,46.46134 28.4833,71.1659 37.4299,102 18.2258,62.81436 22.7715,117.38596 14.4522,173.5 -7.1069,47.93573 -19.3128,88.6826 -38.0705,127.0908 -29.8723,61.1667 -75.75,104.0669 -136.59004,127.7252 -30.15891,11.7276 -58.94978,17.4403 -106.75206,21.1817 -14.49524,1.1345 -40.74847,3.6943 -46,4.4853 -30.19443,4.5477 -48.22435,9.8063 -68.32073,19.9267 -18.14143,9.1359 -29.90413,18.0571 -56.05632,42.5151 -6.80738,6.3664 -13.55738,12.3597 -15,13.3186 -4.12937,2.7447 -8.49715,2.236 -12.82371,-1.4934 z"/>
+    </svg>
+  </div>
+  <h1>Panel de Evaluación</h1>
+  <p class="subtitle">LITPA · Sistema de Calificaciones</p>
+  <div class="divider"></div>
+  <div class="btn-group">
+    <a href="evaluadores.html" class="btn">Evaluadores</a>
+    <a href="admin.html" class="btn btn-admin">Administrador</a>
+  </div>
+</div>
+<script>
+  window.addEventListener('load', () => {
+    const p = document.getElementById('tp1');
+    if (p) { const l=p.getTotalLength(); p.style.strokeDasharray=l; p.style.strokeDashoffset=l; }
+  });
+  const c = document.getElementById('pts');
+  for (let i=0;i<45;i++){
+    const p=document.createElement('div'); p.className='particle';
+    p.style.left=Math.random()*100+'vw';
+    p.style.width=(Math.random()*3+1)+'px'; p.style.height=p.style.width;
+    p.style.animationDuration=(Math.random()*14+9)+'s';
+    p.style.animationDelay=(Math.random()*14)+'s';
+    c.appendChild(p);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Panel de Evaluadores - LITPA</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body {
+      background:#0a0a0a; font-family:'Georgia',serif;
+      min-height:100vh; min-height:100dvh; color:#d4af37; width:100%;
+    }
+
+    /* ── SELECCIÓN ── */
+    #screen-select {
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      min-height:100vh; min-height:100dvh;
+      padding:clamp(20px,4vw,40px) clamp(16px,4vw,20px);
+    }
+    .back-link {
+      position:fixed; top:16px; left:20px;
+      color:#8b6914; text-decoration:none;
+      font-size:clamp(.7rem,.9vw,.85rem); letter-spacing:2px;
+      text-transform:uppercase; transition:color .3s; z-index:50;
+    }
+    .back-link:hover { color:#d4af37; }
+    .page-title {
+      font-size:clamp(1.4rem,4vw,2rem); letter-spacing:clamp(3px,1vw,5px);
+      text-transform:uppercase; margin-bottom:8px;
+      text-shadow:0 0 20px rgba(212,175,55,.5); text-align:center;
+    }
+    .page-sub {
+      font-size:clamp(.65rem,.8vw,.8rem); letter-spacing:clamp(2px,.8vw,4px);
+      color:#8b6914; margin-bottom:clamp(30px,5vmin,50px);
+      text-transform:uppercase; text-align:center;
+    }
+    .evaluators-grid {
+      display:flex; gap:clamp(16px,3vw,30px);
+      flex-wrap:wrap; justify-content:center;
+      width:100%; max-width:800px;
+    }
+    .eval-card {
+      width:clamp(150px,28vw,220px);
+      border:1px solid #d4af37; background:#0f0f0f;
+      padding:clamp(20px,3vmin,36px) clamp(14px,2vw,20px);
+      text-align:center; cursor:pointer;
+      transition:all .3s; position:relative; overflow:hidden;
+    }
+    .eval-card::before {
+      content:''; position:absolute; top:0; left:-100%;
+      width:100%; height:100%;
+      background:linear-gradient(90deg,transparent,rgba(212,175,55,.08),transparent);
+      transition:left .5s;
+    }
+    .eval-card:hover::before, .eval-card:active::before { left:100%; }
+    .eval-card:hover, .eval-card:active {
+      box-shadow:0 0 30px rgba(212,175,55,.3);
+      transform:translateY(-4px); background:#111;
+    }
+    .eval-card svg { margin-bottom:12px; width:clamp(44px,8vmin,64px); height:clamp(44px,8vmin,64px); }
+    .eval-card h3 {
+      font-size:clamp(.85rem,1.2vw,1.1rem); letter-spacing:3px;
+      text-transform:uppercase; margin-bottom:6px;
+    }
+    .eval-card p { font-size:clamp(.65rem,.75vw,.75rem); color:#8b6914; letter-spacing:2px; }
+
+    /* ── MODAL CONTRASEÑA ── */
+    #modal-pass {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,.88);
+      align-items:center; justify-content:center; z-index:100;
+    }
+    #modal-pass.active { display:flex; }
+    .modal-box {
+      background:#0f0f0f; border:1px solid #d4af37;
+      padding:clamp(28px,4vmin,40px) clamp(24px,4vw,36px);
+      width:min(340px, 90vw); text-align:center;
+      box-shadow:0 0 40px rgba(212,175,55,.2);
+      animation:modalIn .3s ease;
+    }
+    @keyframes modalIn { from{opacity:0;transform:scale(.9)} to{opacity:1;transform:scale(1)} }
+    .modal-box h3 {
+      font-size:clamp(.95rem,1.2vw,1.1rem); letter-spacing:3px;
+      text-transform:uppercase; margin-bottom:6px;
+    }
+    .modal-box p { font-size:clamp(.65rem,.75vw,.75rem); color:#8b6914; margin-bottom:24px; letter-spacing:2px; }
+    .modal-box input {
+      width:100%; padding:12px 16px;
+      background:#1a1a1a; border:1px solid #3a3a3a;
+      color:#d4af37; font-size:1.1rem; font-family:'Georgia',serif;
+      letter-spacing:6px; text-align:center;
+      outline:none; transition:border .3s; margin-bottom:8px;
+      border-radius:0;
+    }
+    .modal-box input:focus { border-color:#d4af37; }
+    .modal-error { color:#c0392b; font-size:.75rem; letter-spacing:2px; min-height:18px; margin-bottom:16px; }
+    .modal-btns { display:flex; gap:12px; }
+    .btn-modal {
+      flex:1; padding:12px; border:1px solid #d4af37;
+      background:transparent; color:#d4af37;
+      font-family:'Georgia',serif; font-size:.85rem;
+      letter-spacing:2px; text-transform:uppercase;
+      cursor:pointer; transition:all .3s;
+    }
+    .btn-modal:hover { background:rgba(212,175,55,.1); }
+    .btn-cancel { border-color:#3a3a3a; color:#555; }
+    .btn-cancel:hover { background:rgba(255,255,255,.04); border-color:#555; }
+
+    /* ── FORMULARIO ── */
+    #screen-form {
+      display:none; min-height:100vh; min-height:100dvh;
+      align-items:flex-start; justify-content:center;
+      flex-direction:column; padding:clamp(16px,3vw,40px) clamp(12px,3vw,20px);
+      overflow-y:auto;
+    }
+    #screen-form.active { display:flex; }
+    .form-card {
+      width:100%; max-width:600px; margin:0 auto;
+      border:1px solid #d4af37; background:#0f0f0f;
+      padding:clamp(24px,4vmin,44px) clamp(18px,4vw,40px);
+      box-shadow:0 0 40px rgba(212,175,55,.15);
+    }
+    .form-header { text-align:center; margin-bottom:clamp(20px,3vmin,36px); }
+    .form-header h2 {
+      font-size:clamp(1.1rem,2vw,1.4rem); letter-spacing:4px;
+      text-transform:uppercase; margin-bottom:6px;
+    }
+    .form-header p { font-size:clamp(.65rem,.75vw,.75rem); color:#8b6914; letter-spacing:3px; }
+    .divider-gold {
+      width:100%; height:1px;
+      background:linear-gradient(90deg,transparent,#d4af37,transparent);
+      margin:clamp(14px,2vmin,20px) 0;
+    }
+    .field { margin-bottom:clamp(14px,2vmin,22px); }
+    .field label {
+      display:block; font-size:clamp(.65rem,.75vw,.75rem);
+      letter-spacing:3px; text-transform:uppercase;
+      color:#8b6914; margin-bottom:8px;
+    }
+    .field input, .field textarea {
+      width:100%; padding:clamp(10px,1.5vmin,12px) 16px;
+      background:#1a1a1a; border:1px solid #2a2a2a;
+      color:#d4af37; font-size:clamp(.9rem,1.1vw,1rem);
+      font-family:'Georgia',serif; outline:none; transition:border .3s;
+      border-radius:0;
+    }
+    .field input:focus, .field textarea:focus { border-color:#d4af37; }
+    .field textarea { resize:vertical; min-height:70px; }
+    .score-row { display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,2vw,16px); }
+    .score-display {
+      text-align:center; padding:clamp(12px,2vmin,16px);
+      border:1px solid #2a2a2a; background:#111; margin-bottom:clamp(14px,2vmin,22px);
+    }
+    .score-display span {
+      display:block; font-size:clamp(1.8rem,4vw,2.5rem);
+      color:#d4af37; font-weight:bold;
+    }
+    .score-display p { font-size:clamp(.6rem,.7vw,.7rem); color:#8b6914; letter-spacing:3px; }
+    .btn-submit {
+      width:100%; padding:clamp(12px,2vmin,16px);
+      background:linear-gradient(135deg,#8b6914,#d4af37);
+      border:none; color:#0a0a0a;
+      font-family:'Georgia',serif; font-size:clamp(.85rem,1vw,1rem);
+      letter-spacing:4px; text-transform:uppercase;
+      cursor:pointer; transition:all .3s; font-weight:bold;
+    }
+    .btn-submit:hover { box-shadow:0 0 30px rgba(212,175,55,.5); transform:translateY(-2px); }
+    .btn-submit:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .btn-logout {
+      margin-top:12px; width:100%; padding:10px;
+      background:transparent; border:1px solid #2a2a2a;
+      color:#555; font-family:'Georgia',serif;
+      font-size:clamp(.7rem,.8vw,.8rem); letter-spacing:3px;
+      text-transform:uppercase; cursor:pointer; transition:all .3s;
+    }
+    .btn-logout:hover { border-color:#555; color:#888; }
+
+    /* ── TOAST ── */
+    .toast {
+      position:fixed; bottom:24px; left:50%;
+      transform:translateX(-50%) translateY(80px);
+      background:#1a1a1a; border:1px solid #d4af37;
+      color:#d4af37; padding:12px 24px;
+      font-size:clamp(.75rem,.85vw,.85rem); letter-spacing:2px;
+      transition:transform .4s ease; z-index:200; white-space:nowrap;
+      max-width:90vw; text-align:center;
+    }
+    .toast.show { transform:translateX(-50%) translateY(0); }
+    .toast.error { border-color:#c0392b; color:#c0392b; }
+
+    /* ── TABLET landscape: formulario en 2 columnas ── */
+    @media (min-width:768px) and (orientation:landscape) {
+      .score-row { grid-template-columns:1fr 1fr 1fr 1fr; }
+    }
+    @media (max-width:480px) {
+      .evaluators-grid { flex-direction:column; align-items:center; }
+      .eval-card { width:min(280px, 85vw); }
+    }
+  </style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">← Inicio</a>
+
+<!-- SELECCIÓN -->
+<div id="screen-select">
+  <h1 class="page-title">Evaluadores</h1>
+  <p class="page-sub">Seleccione su panel de acceso</p>
+  <div class="evaluators-grid">
+    <div class="eval-card" onclick="iniciarEval(1)">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="20" r="12" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <circle cx="32" cy="20" r="6" fill="#d4af37" opacity=".3"/>
+        <path d="M12 56 Q12 40 32 40 Q52 40 52 56" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <path d="M32,8 Q38,14 36,20 Q34,26 32,32 Q30,26 28,20 Q26,14 32,8Z" fill="none" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+      </svg>
+      <h3>Evaluador 1</h3>
+      <p>Acceso restringido</p>
+    </div>
+    <div class="eval-card" onclick="iniciarEval(2)">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="20" r="12" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <circle cx="32" cy="20" r="6" fill="#d4af37" opacity=".3"/>
+        <path d="M12 56 Q12 40 32 40 Q52 40 52 56" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <line x1="32" y1="10" x2="32" y2="30" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+        <line x1="24" y1="16" x2="40" y2="16" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+        <ellipse cx="24" cy="19" rx="5" ry="2" fill="none" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+        <ellipse cx="40" cy="19" rx="5" ry="2" fill="none" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+      </svg>
+      <h3>Evaluador 2</h3>
+      <p>Acceso restringido</p>
+    </div>
+    <div class="eval-card" onclick="iniciarEval(3)">
+      <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="20" r="12" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <circle cx="32" cy="20" r="6" fill="#d4af37" opacity=".3"/>
+        <path d="M12 56 Q12 40 32 40 Q52 40 52 56" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <polygon points="32,8 33.5,13 38,13 34.5,16 36,21 32,18 28,21 29.5,16 26,13 30.5,13" fill="none" stroke="#d4af37" stroke-width=".8" opacity=".6"/>
+      </svg>
+      <h3>Evaluador 3</h3>
+      <p>Acceso restringido</p>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONTRASEÑA -->
+<div id="modal-pass">
+  <div class="modal-box">
+    <h3 id="modal-title">Evaluador</h3>
+    <p>Ingrese su contraseña de acceso</p>
+    <input type="password" id="pass-input" placeholder="••••••••" inputmode="text"
+           onkeydown="if(event.key==='Enter')checkPass()"/>
+    <div class="modal-error" id="pass-error"></div>
+    <div class="modal-btns">
+      <button class="btn-modal btn-cancel" onclick="cancelModal()">Cancelar</button>
+      <button class="btn-modal" onclick="checkPass()">Ingresar</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORMULARIO -->
+<div id="screen-form">
+  <div class="form-card">
+    <div class="form-header">
+      <h2 id="form-title">Evaluador</h2>
+      <p id="form-sub">Panel de Calificación</p>
+    </div>
+    <div class="divider-gold"></div>
+    <div class="field">
+      <label>Nombre del Participante</label>
+      <input type="text" id="f-nombre" placeholder="Nombre completo"/>
+    </div>
+    <div class="field">
+      <label>Equipo / Proyecto</label>
+      <input type="text" id="f-equipo" placeholder="Nombre del equipo o proyecto"/>
+    </div>
+    <div class="divider-gold"></div>
+    <p style="font-size:.7rem;color:#8b6914;letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">
+      Criterios de Evaluación (0 – 10)
+    </p>
+    <div class="score-row">
+      <div class="field">
+        <label>Presentación</label>
+        <input type="number" id="c1" min="0" max="10" step="0.1" placeholder="0–10" oninput="calcTotal()"/>
+      </div>
+      <div class="field">
+        <label>Contenido</label>
+        <input type="number" id="c2" min="0" max="10" step="0.1" placeholder="0–10" oninput="calcTotal()"/>
+      </div>
+      <div class="field">
+        <label>Innovación</label>
+        <input type="number" id="c3" min="0" max="10" step="0.1" placeholder="0–10" oninput="calcTotal()"/>
+      </div>
+      <div class="field">
+        <label>Impacto</label>
+        <input type="number" id="c4" min="0" max="10" step="0.1" placeholder="0–10" oninput="calcTotal()"/>
+      </div>
+    </div>
+    <div class="score-display">
+      <span id="total-display">0.00</span>
+      <p>Calificación Total / 40</p>
+    </div>
+    <div class="field">
+      <label>Comentarios (opcional)</label>
+      <textarea id="f-comentarios" placeholder="Observaciones del evaluador..."></textarea>
+    </div>
+    <button class="btn-submit" id="btn-enviar" onclick="enviarCalificacion()">Registrar Calificación</button>
+    <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxlKrArwE9Viwuot-HNOz5j6VGE8Gjuql7WVfFardIB8Cr75a8vCQrUzDYmUlWJS07uTw/exec';
+  const PASSWORDS = { 1:'Litpaevaluadores1', 2:'Litpaevaluadores2', 3:'Litpaevaluadores3' };
+  let currentEval = null;
+
+  /* ── Pantalla completa + orientación horizontal ── */
+  function requestFullscreenLandscape() {
+    const el = document.documentElement;
+    // Pantalla completa
+    const fsReq = el.requestFullscreen || el.webkitRequestFullscreen
+                || el.mozRequestFullScreen || el.msRequestFullscreen;
+    if (fsReq) fsReq.call(el).catch(() => {});
+    // Orientación horizontal
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('landscape').catch(() => {});
+    } else if (window.screen.lockOrientation) {
+      window.screen.lockOrientation('landscape');
+    } else if (window.screen.mozLockOrientation) {
+      window.screen.mozLockOrientation('landscape');
+    }
+  }
+
+  /* ── Leer parámetros URL al cargar ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    const params  = new URLSearchParams(window.location.search);
+    const evalNum = parseInt(params.get('eval'));
+    const skip    = params.get('skip');
+    if (evalNum >= 1 && evalNum <= 3) {
+      skip === '1' ? showForm(evalNum) : openModal(evalNum);
+    }
+  });
+
+  /* ── Clic en tarjeta: pedir contraseña ── */
+  function iniciarEval(num) {
+    currentEval = num;
+    openModal(num);
+  }
+
+  function openModal(num) {
+    currentEval = num;  // asegurar siempre
+    document.getElementById('modal-title').textContent = 'Evaluador ' + num;
+    document.getElementById('pass-input').value = '';
+    document.getElementById('pass-error').textContent = '';
+    document.getElementById('modal-pass').classList.add('active');
+    setTimeout(() => document.getElementById('pass-input').focus(), 150);
+  }
+
+  function closeModal() {
+    document.getElementById('modal-pass').classList.remove('active');
+    // NO resetear currentEval aquí — checkPass lo necesita después
+  }
+
+  function cancelModal() {
+    document.getElementById('modal-pass').classList.remove('active');
+    currentEval = null;
+  }
+
+  function checkPass() {
+    if (!currentEval) return;
+    const val = document.getElementById('pass-input').value;
+    if (val === PASSWORDS[currentEval]) {
+      const evalNum = currentEval;
+      document.getElementById('modal-pass').classList.remove('active');
+      window.location.href = 'splash-eval' + evalNum + '.html';
+    } else {
+      document.getElementById('pass-error').textContent = 'Contraseña incorrecta.';
+      document.getElementById('pass-input').value = '';
+      document.getElementById('pass-input').focus();
+    }
+  }
+
+  function showForm(num) {
+    document.getElementById('screen-select').style.display = 'none';
+    document.getElementById('form-title').textContent = 'Evaluador ' + num;
+    document.getElementById('form-sub').textContent = 'Panel de Calificación · Evaluador ' + num;
+    document.getElementById('screen-form').classList.add('active');
+    currentEval = num;
+    ['f-nombre','f-equipo','c1','c2','c3','c4','f-comentarios']
+      .forEach(id => document.getElementById(id).value = '');
+    document.getElementById('total-display').textContent = '0.00';
+  }
+
+  function logout() {
+    document.getElementById('screen-form').classList.remove('active');
+    document.getElementById('screen-select').style.display = 'flex';
+    window.history.replaceState({}, '', 'evaluadores.html');
+    currentEval = null;
+    // Salir de pantalla completa al cerrar sesión
+    if (document.exitFullscreen) document.exitFullscreen().catch(()=>{});
+    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+  }
+
+  function calcTotal() {
+    const vals = ['c1','c2','c3','c4'].map(id => {
+      const v = parseFloat(document.getElementById(id).value) || 0;
+      return Math.min(10, Math.max(0, v));
+    });
+    document.getElementById('total-display').textContent =
+      vals.reduce((a,b) => a+b, 0).toFixed(2);
+  }
+
+  function showToast(msg, isError=false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  async function enviarCalificacion() {
+    const nombre = document.getElementById('f-nombre').value.trim();
+    const equipo = document.getElementById('f-equipo').value.trim();
+    const c1 = parseFloat(document.getElementById('c1').value)||0;
+    const c2 = parseFloat(document.getElementById('c2').value)||0;
+    const c3 = parseFloat(document.getElementById('c3').value)||0;
+    const c4 = parseFloat(document.getElementById('c4').value)||0;
+    const comentarios = document.getElementById('f-comentarios').value.trim();
+    if (!nombre||!equipo) { showToast('Complete nombre y equipo.',true); return; }
+    if ([c1,c2,c3,c4].some(v=>v<0||v>10)) { showToast('Calificaciones entre 0 y 10.',true); return; }
+    const btn = document.getElementById('btn-enviar');
+    btn.disabled=true; btn.textContent='Enviando...';
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ evaluador:'Evaluador '+currentEval,
+          nombre, equipo, presentacion:c1, contenido:c2,
+          innovacion:c3, impacto:c4, total:c1+c2+c3+c4,
+          comentarios, timestamp:new Date().toISOString() })
+      });
+      showToast('Calificación registrada correctamente.');
+      setTimeout(()=>logout(), 2000);
+    } catch(e) {
+      showToast('Error al enviar. Verifique la conexión.',true);
+    } finally {
+      btn.disabled=false; btn.textContent='Registrar Calificación';
+    }
+  }
+
+  document.getElementById('modal-pass').addEventListener('click', function(e) {
+    if (e.target===this) cancelModal();
+  });
+</script>
+</body>
+</html>
